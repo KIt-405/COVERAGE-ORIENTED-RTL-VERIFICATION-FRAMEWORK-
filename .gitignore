@@ -1,0 +1,40 @@
+# --- Python Temporary Files ---
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.ipynb_checkpoints/
+
+# --- EDA Simulator Tool Outputs & Workspaces ---
+# ModelSim / QuestaSim
+vsim.wlf
+transcript
+modelsim.ini
+work/
+msim/
+*.mpf
+
+# Synopsys VCS / Cadence Xcelium
+csrc/
+simv
+simv.daidir/
+simv.vdb/
+urgReport/
+xcelium.d/
+xm.log
+*.history
+
+# --- Waveform Dump Files (Database Logs) ---
+*.vcd
+*.wlf
+*.fsdb
+*.vdb
+
+# --- Project-Specific Raw Test Logs ---
+# We keep tools/coverage_parser.py but ignore the dynamically generated log file
+simulation_transcript.log
+
+# --- OS Specific Files ---
+.DS_Store
+Thumbs.db
