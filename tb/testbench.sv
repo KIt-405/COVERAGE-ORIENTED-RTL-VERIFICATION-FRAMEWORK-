@@ -1,12 +1,7 @@
-// ==============================================================================
-// Description: Object-Oriented Framework capturing CRV, SVA, and Covergroups.
-// ==============================================================================
+
 
 `timescale 1ns/1ps
 
-// ---------------------------------------------------------
-// A. PHYSICAL INTERFACE CAPTURING PIN BUSES
-// ---------------------------------------------------------
 interface fifo_if #(parameter int D_WIDTH = 8) (input logic clk);
     logic               rst_n;
     logic               wr_en;
@@ -16,7 +11,6 @@ interface fifo_if #(parameter int D_WIDTH = 8) (input logic clk);
     logic               full;
     logic               empty;
 
-    // Clocking block to eliminate simulation runtime race hazards
     clocking drv_cb @(posedge clk);
         default input #1ns output #1ns;
         output rst_n, wr_en, rd_en, data_in;
@@ -25,9 +19,6 @@ interface fifo_if #(parameter int D_WIDTH = 8) (input logic clk);
 endinterface
 
 
-// ---------------------------------------------------------
-// B. RANDOMIZABLE TRANSACTION PACKET (CRV Stimulus)
-// ---------------------------------------------------------
 class fifo_transaction #(parameter int D_WIDTH = 8);
     rand bit               wr_en;
     rand bit               rd_en;
@@ -41,9 +32,6 @@ class fifo_transaction #(parameter int D_WIDTH = 8);
 endclass
 
 
-// ---------------------------------------------------------
-// C. OBJECT-ORIENTED INPUT STIMULUS DRIVER COMPONENT
-// ---------------------------------------------------------
 class fifo_driver #(parameter int D_WIDTH = 8);
     virtual fifo_if #(D_WIDTH) vif;
 
@@ -74,9 +62,6 @@ class fifo_driver #(parameter int D_WIDTH = 8);
 endclass
 
 
-// ---------------------------------------------------------
-// D. TOP-LEVEL SIMULATION RUNNER MODULE
-// ---------------------------------------------------------
 module fifo_tb_top;
 
     localparam int D_WIDTH = 8;
@@ -87,7 +72,6 @@ module fifo_tb_top;
 
     fifo_if #(D_WIDTH) intf(clk);
 
-    // Instantiation of actual hardware target
     fifo_rtl #(
         .DATA_WIDTH(D_WIDTH),
         .FIFO_DEPTH(F_DEPTH)
@@ -102,9 +86,6 @@ module fifo_tb_top;
         .empty   (intf.empty)
     );
 
-    // ---------------------------------------------------------
-    // E. FUNCTIONAL COVERAGE ANALYSIS MATRIX (Bullet Point 3)
-    // ---------------------------------------------------------
     covergroup fifo_coverage_cg @(posedge clk);
         option.per_instance = 1;
 
@@ -119,26 +100,21 @@ module fifo_tb_top;
         }
     endgroup
 
-    // ---------------------------------------------------------
-    // F. SYSTEMVERILOG ASSERTIONS (SVA) RUNTIME CHECKS (Bullet Point 2)
-    // ---------------------------------------------------------
-    // Property 1: If full is flagged, write operations must be blocked (No overflow)
+
+
     assert_overflow_protection: assert property (
         @(posedge clk) disable iff (!intf.rst_n)
         (intf.full && intf.wr_en) |=>> (dut.wr_ptr == $past(dut.wr_ptr))
     ) else $error("[ASSERTION ERROR] Memory Write Pointer advanced during FIFO Full condition!");
 
-    // Property 2: If empty is flagged, read operations must be blocked (No underflow)
+
     assert_underflow_protection: assert property (
         @(posedge clk) disable iff (!intf.rst_n)
         (intf.empty && intf.rd_en) |=>> (dut.rd_ptr == $past(dut.rd_ptr))
     ) else $error("[ASSERTION ERROR] Memory Read Pointer advanced during FIFO Empty condition!");
 
 
-    // ---------------------------------------------------------
-    // G. EXECUTABLE SEQUENCER & STRUCTURAL MISMATCH MONITOR
-    // ---------------------------------------------------------
-    // Automated Scoreboard Check: Simulates a gold reference queue model
+
     logic [D_WIDTH-1:0] scoreboard_queue[$];
     logic [D_WIDTH-1:0] expected_data;
 
@@ -146,12 +122,12 @@ module fifo_tb_top;
         @(posedge intf.rst_n);
         forever begin
             @(posedge clk);
-            #1ns; // Step into safe sampling zone
+            #1ns; 
             if (intf.wr_en && !intf.full) begin
                 scoreboard_queue.push_back(intf.data_in);
             end
             if (intf.rd_en && !intf.empty) begin
-                // Give the memory array one cycle to propagate data out to the pins
+ 
                 @(posedge clk); #1ns;
                 expected_data = scoreboard_queue.pop_front();
                 if (intf.data_out !== expected_data) begin
@@ -168,7 +144,7 @@ module fifo_tb_top;
         fifo_driver #(D_WIDTH) drv;
         fifo_coverage_cg cov_inst = new();
         
-        // Enable log capture file for Python automation post-processing script
+
         int log_file;
         log_file = $fopen("simulation_transcript.log", "w");
         
